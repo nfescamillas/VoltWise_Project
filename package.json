@@ -1,0 +1,15 @@
+{
+  "name": "electrical-engineering-toolkit",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@voltwise/frontend",
+    "build": "npm run build --workspace=@voltwise/frontend",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  }
+}
