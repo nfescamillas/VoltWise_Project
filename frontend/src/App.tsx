@@ -68,7 +68,7 @@ export default function App() {
           : page === 'home' ? <HomePage categories={categories} standards={standards} topics={featured} stats={stats} onSearch={search} onCategory={openBrowse} onTopic={setSelectedTopicId} />
           : page === 'browse' ? browseLoading && browseTopics.length === 0 ? <Loading /> : <BrowsePage categories={categories} topics={browseTopics} selectedCategory={selectedCategory} query={query} onQuery={setQuery} onCategory={(id) => { setSelectedCategory(id); setStandardFilter(undefined); }} onTopic={setSelectedTopicId} />
           : page === 'standards' ? <StandardsPage standards={standards} onOpen={openStandard} />
-          : <section className="empty-state empty-state--page"><h2>Saved references</h2><p>Your bookmarked topics will appear here. This mock workspace keeps the interface backend-independent.</p><button onClick={() => openBrowse()}>Browse the library</button></section>}
+          : <section className="empty-state empty-state--page"><h2>Saved references</h2><p>Your bookmarked topics will appear here. The service gateway keeps the interface backend-independent.</p><button onClick={() => openBrowse()}>Browse the library</button></section>}
       </main>
       <footer className="app-footer"><span>© 2026 Voltwise Engineering Reference</span><span>This tool summarizes standards. Always verify against official publications.</span></footer>
     </div>

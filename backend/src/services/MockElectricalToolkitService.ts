@@ -48,7 +48,11 @@ export class MockElectricalToolkitService implements ElectricalToolkitService {
       const title = normalize(topic.title);
       const searchable = normalize([
         topic.title, topic.description, ...topic.synonyms,
-        ...Object.values(topic.standards).flatMap((item) => item ? [item.reference, item.summary] : []),
+        ...Object.values(topic.standards).flatMap((item) => item ? [
+          item.reference, ...(item.references ?? []), item.summary, ...(item.applicability ?? []),
+          ...item.requirements, ...(item.engineeringNotes ?? []), ...(item.commonMistakes ?? []),
+          ...(item.formulas ?? []).flatMap((formula) => [formula.name, formula.expression, ...formula.variables.flatMap((variable) => [variable.symbol, variable.definition])]),
+        ] : []),
       ].join(' '));
       return terms.every((term) => searchable.includes(term));
     });

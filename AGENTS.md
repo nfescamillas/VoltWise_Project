@@ -2,14 +2,16 @@
 
 ## Project purpose
 
-Voltwise is an electrical standards quick-reference application based on `plan.md.md`. It helps users navigate original summaries and reference locations for IEC, NEC/NFPA 70, and the Philippine Electrical Code. It is not a certified design tool and must never imply that its summaries replace official publications, local rules, an authority having jurisdiction, or professional engineering judgment.
+Voltwise is an electrical standards quick-reference application based on `plan_v2.md`. It helps users navigate original summaries and reference locations for IEC, NEC/NFPA 70, and the Philippine Electrical Code. It is not a certified design tool and must never imply that its summaries replace official publications, local rules, an authority having jurisdiction, or professional engineering judgment.
 
 ## Repository layout
 
 - `frontend/`: React, TypeScript, Vite, UI components, pages, styles, and UI tests.
 - `backend/`: Shared data contracts, structured topic catalog, the service interface, mock service implementation, and service tests.
-- `plan.md.md`: Product specification and roadmap.
+- `plan_v2.md`: Current product specification and roadmap.
+- `plan.md`: Original product specification retained for reference.
 - `README.md`: Developer setup and architecture overview.
+- `Makefile`: Repository-wide development command shortcuts.
 
 Keep frontend-only files in `frontend/` and backend/data-access files in `backend/`. Root files should be limited to workspace configuration, documentation, and repository-wide tooling.
 
@@ -36,17 +38,24 @@ Keep frontend-only files in `frontend/` and backend/data-access files in `backen
 
 Run commands from the repository root:
 
-- `npm install` — install and link both workspaces.
-- `npm run dev` — start the frontend development server.
-- `npm test` — run frontend and backend tests.
-- `npm run build` — type-check and build the production frontend.
-- `npm run lint` — type-check both workspaces.
+- `make help` — list the available development commands.
+- `make install` — install and link both npm workspaces.
+- `make run` — start the frontend development server (`make dev` is an alias).
+- `make test` — run frontend and TypeScript backend tests.
+- `make lint` — type-check both npm workspaces.
+- `make build` — build the production frontend.
+- `make verify` — run tests, lint, and the production build.
+- `make api-install` — install FastAPI development dependencies.
+- `make api` — start the FastAPI development server.
+- `make api-test` — run the FastAPI test suite.
+
+The underlying npm and `uv` commands remain valid when GNU Make is unavailable.
 
 ## Testing expectations
 
 - Add or update backend tests for service behavior, filtering, search ranking, defensive copying, and relationship resolution.
 - Add or update frontend tests for user-visible workflows and service integration.
-- Run `npm test`, `npm run lint`, and `npm run build` after structural or behavior changes.
+- Run `make verify` after structural or behavior changes. When GNU Make is unavailable, run `npm test`, `npm run lint`, and `npm run build` directly.
 - Keep tests deterministic and independent of network access or a real backend.
 
 ## UI conventions

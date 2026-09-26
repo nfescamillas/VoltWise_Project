@@ -6,9 +6,9 @@ info:
     HTTP representation of the `ElectricalToolkitService` consumed through
     `frontend/src/services/index.ts`.
 
-    The current frontend is backed by an in-memory implementation rather than
-    HTTP. These operations are a one-to-one transport mapping of that service
-    contract so an HTTP adapter can replace it without changing the UI.
+    The frontend consumes these operations through its HTTP implementation of
+    the shared service contract. The operations remain a one-to-one transport
+    mapping so UI components stay independent of the transport.
 
     All operations are read-only, have no request body, and require no
     authentication. Topic content is an original quick-reference summary and
@@ -110,7 +110,7 @@ paths:
       summary: List recently added topics
       description: |
         Implements `ElectricalToolkitService.getRecentTopics(limit)`. The
-        service default is five topics. The current mock defines recency as
+        service default is five topics. The current backend defines recency as
         reverse catalog order. This operation has no request body and does not
         require authentication.
       security: []

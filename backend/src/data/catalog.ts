@@ -1,4 +1,5 @@
 import type { Category, Standard, StandardId, Topic, TopicStandard } from '../types';
+import { enrichStandard, enrichedTopicIds } from './enrichedContent';
 
 export const categories: Category[] = [
   { id: 'conductors', name: 'Conductors & Cables', shortName: 'Conductors', description: 'Ampacity, sizing, derating, and voltage drop.', accent: '#0b7285', icon: 'cable' },
@@ -147,9 +148,18 @@ export const topics: Topic[] = Object.entries(topicNames).flatMap(([categoryId, 
       commonMistakes: ['Applying a general rule without checking its exceptions.', 'Failing to coordinate the requirement with connected equipment.'],
       relatedTopicIds: related,
       lastReviewed: index % 3 === 0 ? '2026-08-14' : index % 3 === 1 ? '2026-07-22' : '2026-06-05',
-      reviewStatus: index % 5 === 0 ? 'Verified' : 'Reviewed',
-      sourceStatus: 'Curated summary — verify against official publication',
+      reviewStatus: 'Draft',
+      sourceStatus: 'Locator draft — substantive content not yet migrated',
     };
-    return { ...base, ...(overrides[id] ?? {}) };
+    const topic = { ...base, ...(overrides[id] ?? {}) };
+    if (enrichedTopicIds.includes(id)) {
+      topic.standards = Object.fromEntries(
+        Object.entries(topic.standards).map(([standardId, content]) => [standardId, enrichStandard(id, standardId as StandardId, content!)]),
+      );
+      topic.reviewStatus = 'Needs source';
+      topic.lastReviewed = '2026-09-26';
+      topic.sourceStatus = 'Enriched draft — detailed requirements require official-source verification';
+    }
+    return topic;
   }),
 );

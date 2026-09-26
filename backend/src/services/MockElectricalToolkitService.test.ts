@@ -7,7 +7,7 @@ describe('MockElectricalToolkitService', () => {
   it('provides the complete MVP catalog', async () => {
     const [stats, categories, standards] = await Promise.all([service.getStats(), service.getCategories(), service.getStandards()]);
     expect(stats.topicCount).toBe(63);
-    expect(stats.reviewedCount).toBe(63);
+    expect(stats.reviewedCount).toBe(0);
     expect(categories).toHaveLength(8);
     expect(standards.map((item) => item.id)).toEqual(['iec', 'nec', 'pec']);
   });
@@ -21,6 +21,11 @@ describe('MockElectricalToolkitService', () => {
     const results = await service.searchTopics('Article 430', { categoryId: 'motors', standardId: 'nec' });
     expect(results).toHaveLength(10);
     expect(results.every((item) => item.categoryId === 'motors')).toBe(true);
+  });
+
+  it('searches enriched engineering content', async () => {
+    const results = await service.searchTopics('reactance');
+    expect(results[0].id).toBe('voltage-drop-guidance');
   });
 
   it('returns defensive copies so callers cannot mutate mock storage', async () => {

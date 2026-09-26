@@ -1,11 +1,21 @@
 /** Shared public data contracts exposed by the backend workspace. */
 export type {
   Category,
+  CalculatorId,
   DashboardStats,
+  DesignWorkflow,
+  EngineeringFigure,
+  EngineeringFormula,
+  EngineeringTable,
+  FormulaBasis,
+  FormulaVariable,
   ReviewStatus,
   SearchOptions,
   Standard,
   StandardId,
+  StandardReferenceDetail,
   Topic,
   TopicStandard,
+  VerificationMetadata,
+  WorkedExample,
 } from '@voltwise/backend';
