@@ -1,0 +1,482 @@
+openapi: 3.1.0
+info:
+  title: Voltwise Electrical Toolkit API
+  version: 0.1.0
+  description: |
+    HTTP representation of the `ElectricalToolkitService` consumed through
+    `frontend/src/services/index.ts`.
+
+    The current frontend is backed by an in-memory implementation rather than
+    HTTP. These operations are a one-to-one transport mapping of that service
+    contract so an HTTP adapter can replace it without changing the UI.
+
+    All operations are read-only, have no request body, and require no
+    authentication. Topic content is an original quick-reference summary and
+    does not replace official standards, local rules, an authority having
+    jurisdiction, or professional engineering judgment.
+servers:
+  - url: /api/v1
+    description: Application API
+security: []
+tags:
+  - name: Categories
+  - name: Standards
+  - name: Topics
+  - name: Dashboard
+
+paths:
+  /categories:
+    get:
+      tags: [Categories]
+      operationId: getCategories
+      summary: List engineering categories
+      description: |
+        Implements `ElectricalToolkitService.getCategories()`. This operation
+        has no request body and does not require authentication.
+      security: []
+      responses:
+        '200':
+          description: All engineering categories.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+  /standards:
+    get:
+      tags: [Standards]
+      operationId: getStandards
+      summary: List supported standards
+      description: |
+        Implements `ElectricalToolkitService.getStandards()`. This operation
+        has no request body and does not require authentication.
+      security: []
+      responses:
+        '200':
+          description: All supported standards.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Standard'
+
+  /stats:
+    get:
+      tags: [Dashboard]
+      operationId: getStats
+      summary: Get dashboard statistics
+      description: |
+        Implements `ElectricalToolkitService.getStats()`. `reviewedCount`
+        includes records whose review status is `Reviewed` or `Verified`.
+        This operation has no request body and does not require authentication.
+      security: []
+      responses:
+        '200':
+          description: Aggregate catalog counts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+
+  /topics/featured:
+    get:
+      tags: [Topics]
+      operationId: getFeaturedTopics
+      summary: List featured topics
+      description: |
+        Implements `ElectricalToolkitService.getFeaturedTopics(limit)`. The
+        service default is four topics. This operation has no request body and
+        does not require authentication.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/FeaturedLimit'
+      responses:
+        '200':
+          description: Featured topics in curated display order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Topic'
+
+  /topics/recent:
+    get:
+      tags: [Topics]
+      operationId: getRecentTopics
+      summary: List recently added topics
+      description: |
+        Implements `ElectricalToolkitService.getRecentTopics(limit)`. The
+        service default is five topics. The current mock defines recency as
+        reverse catalog order. This operation has no request body and does not
+        require authentication.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/RecentLimit'
+      responses:
+        '200':
+          description: Recent topics in descending service-defined recency order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Topic'
+
+  /topics/search:
+    get:
+      tags: [Topics]
+      operationId: searchTopics
+      summary: Search and filter topics
+      description: |
+        Implements `ElectricalToolkitService.searchTopics(query, options)`.
+        Search is case-insensitive and matches every normalized query term
+        against a topic's title, description, synonyms, standard references,
+        and standard summaries. Results with query terms are ranked by title
+        matches, then synonym matches, then title. An empty `q` returns all
+        topics that satisfy the optional filters, in catalog order.
+
+        This operation has no request body and does not require authentication.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search text. An empty string performs a filter-only query.
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          required: false
+          description: Return only topics in this category.
+          schema:
+            type: string
+        - name: standardId
+          in: query
+          required: false
+          description: Return only topics containing content for this standard.
+          schema:
+            $ref: '#/components/schemas/StandardId'
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of matching topics to return.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Topics matching the query and optional filters.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Topic'
+
+  /categories/{categoryId}/topics:
+    get:
+      tags: [Topics, Categories]
+      operationId: getTopicsByCategory
+      summary: List topics in a category
+      description: |
+        Implements `ElectricalToolkitService.getTopicsByCategory(categoryId)`.
+        An unknown category produces an empty array, matching the current
+        service contract. This operation has no request body and does not
+        require authentication.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+      responses:
+        '200':
+          description: Topics in the requested category, or an empty array.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Topic'
+
+  /standards/{standardId}/topics:
+    get:
+      tags: [Topics, Standards]
+      operationId: getTopicsByStandard
+      summary: List topics covered by a standard
+      description: |
+        Implements `ElectricalToolkitService.getTopicsByStandard(standardId)`.
+        This operation has no request body and does not require authentication.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/StandardId'
+      responses:
+        '200':
+          description: Topics containing content for the requested standard.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Topic'
+
+  /topics/{topicId}:
+    get:
+      tags: [Topics]
+      operationId: getTopic
+      summary: Get a topic
+      description: |
+        Implements `ElectricalToolkitService.getTopic(topicId)`. The service
+        represents an unknown topic as a successful JSON `null`, rather than a
+        404 response. This operation has no request body and does not require
+        authentication.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/TopicId'
+      responses:
+        '200':
+          description: The requested topic, or JSON null when it does not exist.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/Topic'
+                  - type: 'null'
+
+  /topics/{topicId}/related:
+    get:
+      tags: [Topics]
+      operationId: getRelatedTopics
+      summary: List related topics
+      description: |
+        Implements `ElectricalToolkitService.getRelatedTopics(topicId)`.
+        Missing related records are omitted. An unknown source topic produces
+        an empty array. This operation has no request body and does not require
+        authentication.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/TopicId'
+      responses:
+        '200':
+          description: Resolved related topics, or an empty array.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Topic'
+
+components:
+  parameters:
+    CategoryId:
+      name: categoryId
+      in: path
+      required: true
+      description: Category identifier.
+      schema:
+        type: string
+    StandardId:
+      name: standardId
+      in: path
+      required: true
+      description: Supported standard identifier.
+      schema:
+        $ref: '#/components/schemas/StandardId'
+    TopicId:
+      name: topicId
+      in: path
+      required: true
+      description: Topic identifier.
+      schema:
+        type: string
+    FeaturedLimit:
+      name: limit
+      in: query
+      required: false
+      description: Number of featured topics to return.
+      schema:
+        type: integer
+        default: 4
+    RecentLimit:
+      name: limit
+      in: query
+      required: false
+      description: Number of recent topics to return.
+      schema:
+        type: integer
+        default: 5
+
+  schemas:
+    StandardId:
+      type: string
+      enum: [iec, nec, pec]
+
+    ReviewStatus:
+      type: string
+      enum:
+        - Draft
+        - Reviewed
+        - Verified
+        - Needs update
+
+    Category:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - shortName
+        - description
+        - accent
+        - icon
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        shortName:
+          type: string
+        description:
+          type: string
+        accent:
+          type: string
+          description: CSS-compatible accent color used by the frontend.
+        icon:
+          type: string
+          description: Icon key understood by the frontend category icon component.
+
+    Standard:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - fullName
+        - edition
+        - description
+      properties:
+        id:
+          $ref: '#/components/schemas/StandardId'
+        name:
+          type: string
+        fullName:
+          type: string
+        edition:
+          type: string
+        description:
+          type: string
+
+    TopicStandard:
+      type: object
+      additionalProperties: false
+      required:
+        - standardId
+        - edition
+        - reference
+        - summary
+        - requirements
+      properties:
+        standardId:
+          $ref: '#/components/schemas/StandardId'
+        edition:
+          type: string
+        reference:
+          type: string
+        summary:
+          type: string
+        requirements:
+          type: array
+          items:
+            type: string
+        terminology:
+          type: string
+
+    TopicStandards:
+      type: object
+      description: |
+        Standard-specific content keyed by standard identifier. Each key is
+        optional because a topic may not be covered by every standard.
+      additionalProperties: false
+      properties:
+        iec:
+          $ref: '#/components/schemas/TopicStandard'
+        nec:
+          $ref: '#/components/schemas/TopicStandard'
+        pec:
+          $ref: '#/components/schemas/TopicStandard'
+
+    Topic:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - categoryId
+        - description
+        - synonyms
+        - standards
+        - engineeringExplanation
+        - engineeringNotes
+        - commonMistakes
+        - relatedTopicIds
+        - lastReviewed
+        - reviewStatus
+        - sourceStatus
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        categoryId:
+          type: string
+        description:
+          type: string
+        synonyms:
+          type: array
+          items:
+            type: string
+        standards:
+          $ref: '#/components/schemas/TopicStandards'
+        engineeringExplanation:
+          type: string
+        engineeringNotes:
+          type: array
+          items:
+            type: string
+        commonMistakes:
+          type: array
+          items:
+            type: string
+        relatedTopicIds:
+          type: array
+          items:
+            type: string
+        lastReviewed:
+          type: string
+          format: date
+        reviewStatus:
+          $ref: '#/components/schemas/ReviewStatus'
+        sourceStatus:
+          type: string
+
+    DashboardStats:
+      type: object
+      additionalProperties: false
+      required:
+        - topicCount
+        - categoryCount
+        - standardCount
+        - reviewedCount
+      properties:
+        topicCount:
+          type: integer
+          minimum: 0
+        categoryCount:
+          type: integer
+          minimum: 0
+        standardCount:
+          type: integer
+          minimum: 0
+        reviewedCount:
+          type: integer
+          minimum: 0

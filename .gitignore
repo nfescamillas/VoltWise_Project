@@ -4,6 +4,10 @@ frontend/dist/
 frontend/vite.config.js
 frontend/vite.config.d.ts
 coverage/
+.venv/
+.uv-cache/
+__pycache__/
+.pytest_cache/
 .env
 .env.*
 !.env.example
