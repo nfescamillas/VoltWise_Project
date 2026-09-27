@@ -309,7 +309,7 @@ components:
   schemas:
     StandardId:
       type: string
-      enum: [iec, nec, pec]
+      enum: [pec, pdc, pgc]
 
     ReviewStatus:
       type: string
@@ -318,6 +318,7 @@ components:
         - Reviewed
         - Verified
         - Needs update
+        - Needs verification
 
     Category:
       type: object
@@ -327,6 +328,7 @@ components:
         - name
         - shortName
         - description
+        - status
         - accent
         - icon
       properties:
@@ -338,6 +340,9 @@ components:
           type: string
         description:
           type: string
+        status:
+          type: string
+          enum: [active, planned]
         accent:
           type: string
           description: CSS-compatible accent color used by the frontend.
@@ -398,11 +403,11 @@ components:
         optional because a topic may not be covered by every standard.
       additionalProperties: false
       properties:
-        iec:
-          $ref: '#/components/schemas/TopicStandard'
-        nec:
-          $ref: '#/components/schemas/TopicStandard'
         pec:
+          $ref: '#/components/schemas/TopicStandard'
+        pdc:
+          $ref: '#/components/schemas/TopicStandard'
+        pgc:
           $ref: '#/components/schemas/TopicStandard'
 
     Topic:

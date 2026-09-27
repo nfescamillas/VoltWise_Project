@@ -9,6 +9,22 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe('HttpElectricalToolkitService', () => {
+  it('calls the default browser fetch with its required global receiver', async () => {
+    const stats = { topicCount: 63, categoryCount: 8, standardCount: 3, reviewedCount: 63 };
+    const browserFetch = vi.fn(function (this: typeof globalThis) {
+      if (this !== globalThis) throw new TypeError('Illegal invocation');
+      return Promise.resolve(jsonResponse(stats));
+    });
+    vi.stubGlobal('fetch', browserFetch);
+
+    try {
+      await expect(new HttpElectricalToolkitService('/api/v1').getStats()).resolves.toEqual(stats);
+      expect(browserFetch).toHaveBeenCalledWith('/api/v1/stats', expect.any(Object));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('maps service methods to the API routes and query parameters', async () => {
     const fetcher = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse([])));
     const service = new HttpElectricalToolkitService('https://api.example.test/api/v1/', fetcher);

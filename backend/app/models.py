@@ -20,9 +20,9 @@ class ApiModel(BaseModel):
 
 
 class StandardId(str, Enum):
-    IEC = "iec"
-    NEC = "nec"
     PEC = "pec"
+    PDC = "pdc"
+    PGC = "pgc"
 
 
 class ReviewStatus(str, Enum):
@@ -30,6 +30,7 @@ class ReviewStatus(str, Enum):
     REVIEWED = "Reviewed"
     VERIFIED = "Verified"
     NEEDS_UPDATE = "Needs update"
+    NEEDS_VERIFICATION = "Needs verification"
 
 
 class Category(ApiModel):
@@ -47,6 +48,7 @@ class Standard(ApiModel):
     full_name: str
     edition: str
     description: str
+    status: str = "active"
 
 
 class TopicStandard(ApiModel):
@@ -59,9 +61,9 @@ class TopicStandard(ApiModel):
 
 
 class TopicStandards(ApiModel):
-    iec: TopicStandard | None = None
-    nec: TopicStandard | None = None
     pec: TopicStandard | None = None
+    pdc: TopicStandard | None = None
+    pgc: TopicStandard | None = None
 
 
 class Topic(ApiModel):

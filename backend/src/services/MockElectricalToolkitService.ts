@@ -25,7 +25,7 @@ export class MockElectricalToolkitService implements ElectricalToolkitService {
   }
 
   async getFeaturedTopics(limit = 4) {
-    const ids = ['motor-overload-protection', 'conductor-ampacity', 'generator-neutral-grounding', 'working-clearances'];
+    const ids = ['motor-branch-circuit-conductors', 'motor-full-load-current', 'motor-overload-protection', 'motor-short-circuit-and-ground-fault-protection'];
     return this.result(ids.map((id) => topics.find((topic) => topic.id === id)!).slice(0, limit));
   }
 
@@ -49,15 +49,31 @@ export class MockElectricalToolkitService implements ElectricalToolkitService {
       const searchable = normalize([
         topic.title, topic.description, ...topic.synonyms,
         ...Object.values(topic.standards).flatMap((item) => item ? [
-          item.reference, ...(item.references ?? []), item.summary, ...(item.applicability ?? []),
-          ...item.requirements, ...(item.engineeringNotes ?? []), ...(item.commonMistakes ?? []),
+          item.reference, ...(item.references ?? []), item.summary, item.quickAnswer ?? '',
+          ...(item.applicability ?? []), ...(item.notApplicable ?? []), ...(item.importantConditions ?? []),
+          ...item.requirements, ...(item.engineeringNotes ?? []), ...(item.exceptions ?? []),
+          ...(item.commonMistakes ?? []),
           ...(item.formulas ?? []).flatMap((formula) => [formula.name, formula.expression, ...formula.variables.flatMap((variable) => [variable.symbol, variable.definition])]),
+          ...(item.tables ?? []).flatMap((table) => [table.title, ...table.columns, ...table.rows.flat()]),
+          ...(item.figures ?? []).flatMap((figure) => [figure.title, figure.description, ...figure.nodes, ...(figure.paths ?? []).flat(), figure.annotation ?? '']),
+          ...(item.examples ?? []).flatMap((example) => [example.title, ...example.given, ...example.assumptions, example.applicableRule, ...example.steps, example.result, example.interpretation]),
+          ...(item.workflows ?? []).flatMap((workflow) => [workflow.title, ...workflow.steps, workflow.note ?? '']),
         ] : []),
       ].join(' '));
       return terms.every((term) => searchable.includes(term));
     });
     if (terms.length) {
       matches = matches.sort((a, b) => {
+        const phrasePriorities: Record<string, string[]> = {
+          'motor breaker': ['motor-short-circuit-and-ground-fault-protection', 'motor-overload-protection', 'motor-branch-circuit-conductors'],
+          'generator neutral': ['generator-neutral-grounding', 'grounding-and-bonding-fundamentals'],
+        };
+        const priority = phrasePriorities[normalize(query)];
+        if (priority) {
+          const aIndex = priority.indexOf(a.id);
+          const bIndex = priority.indexOf(b.id);
+          if (aIndex >= 0 || bIndex >= 0) return (aIndex < 0 ? priority.length : aIndex) - (bIndex < 0 ? priority.length : bIndex);
+        }
         const score = (topic: Topic) => terms.reduce((total, term) => total + (normalize(topic.title).includes(term) ? 3 : 0) + (topic.synonyms.some((s) => normalize(s).includes(term)) ? 2 : 0), 0);
         return score(b) - score(a) || a.title.localeCompare(b.title);
       });

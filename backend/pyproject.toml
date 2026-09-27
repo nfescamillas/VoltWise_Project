@@ -5,6 +5,7 @@ description = "FastAPI transport for the Voltwise electrical toolkit"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115,<1",
+  "sqlalchemy>=2.0,<3",
   "uvicorn[standard]>=0.30,<1",
 ]
 

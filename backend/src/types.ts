@@ -1,4 +1,4 @@
-export type StandardId = 'iec' | 'nec' | 'pec';
+export type StandardId = 'pec' | 'pdc' | 'pgc';
 export type ReviewStatus = 'Draft' | 'Reviewed' | 'Verified' | 'Needs update' | 'Needs source' | 'Needs verification';
 export type FormulaBasis = 'standard-defined' | 'derived-from-standard' | 'general-engineering';
 
@@ -10,12 +10,15 @@ export interface FormulaVariable {
 
 export interface EngineeringFormula {
   name: string;
+  purpose?: string;
   expression: string;
   variables: FormulaVariable[];
   units: string;
   basis: FormulaBasis;
   sourceReference?: string;
   whenToUse?: string;
+  assumptions?: string[];
+  relationshipToPec?: string;
   workedInputExample?: string;
   notes?: string[];
 }
@@ -47,16 +50,19 @@ export interface DesignWorkflow {
   note?: string;
 }
 
-export type CalculatorId = 'three-phase-current' | 'voltage-drop' | 'transformer-current';
+export type CalculatorId = 'three-phase-current' | 'voltage-drop' | 'transformer-current' | 'conductor-design' | 'transformer-protection' | 'motor-disconnect-controller' | 'transformer-grounding' | 'working-clearance' | 'service-equipment' | 'generator-neutral-grounding';
 
 export interface WorkedExample {
   title: string;
+  problem?: string;
   given: string[];
   assumptions: string[];
   applicableRule: string;
   steps: string[];
   result: string;
   interpretation: string;
+  verification?: string[];
+  variations?: string[];
   sourceReferences: string[];
 }
 
@@ -93,6 +99,12 @@ export interface Standard {
   fullName: string;
   edition: string;
   description: string;
+  status: 'active' | 'planned';
+}
+
+export interface ContentCompleteness {
+  item: string;
+  status: 'complete' | 'not-applicable' | 'incomplete';
 }
 
 export interface TopicStandard {
@@ -140,6 +152,7 @@ export interface Topic {
   lastReviewed: string;
   reviewStatus: ReviewStatus;
   sourceStatus: string;
+  completeness?: ContentCompleteness[];
 }
 
 export interface DashboardStats {

@@ -13,7 +13,7 @@ type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Respons
 export class HttpElectricalToolkitService implements ElectricalToolkitService {
   private readonly baseUrl: string;
 
-  constructor(baseUrl = '/api/v1', private readonly fetcher: Fetcher = globalThis.fetch) {
+  constructor(baseUrl = '/api/v1', private readonly fetcher: Fetcher = globalThis.fetch.bind(globalThis)) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
   }
 

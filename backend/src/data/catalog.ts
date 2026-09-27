@@ -1,165 +1,110 @@
-import type { Category, Standard, StandardId, Topic, TopicStandard } from '../types';
-import { enrichStandard, enrichedTopicIds } from './enrichedContent';
+import type { Category, ContentCompleteness, Standard, Topic } from '../types';
+import { conductorAmpacity, temperatureCorrection, voltageDrop } from './conductorChapters';
+import { generatorNeutralGrounding, groundingFundamentals } from './groundingChapters';
+import { motorFaultProtection, motorFullLoadCurrent, motorOverloadProtection } from './motorChapters';
+import { servicesEquipment, transformerProtection, workingClearances } from './finalChapters';
+import { motorControllersAndControlCircuits, motorDisconnectingMeans, transformerGroundingAndBonding } from './equipmentChapters';
+
+const PEC_EDITION = 'Supplied PEC Part 1 PDF - edition needs verification';
+const REVIEW_DATE = '2026-09-26';
 
 export const categories: Category[] = [
-  { id: 'conductors', name: 'Conductors & Cables', shortName: 'Conductors', description: 'Ampacity, sizing, derating, and voltage drop.', accent: '#0b7285', icon: 'cable' },
-  { id: 'protection', name: 'Overcurrent Protection', shortName: 'Protection', description: 'Breakers, fuses, fault protection, and coordination.', accent: '#c2410c', icon: 'shield' },
-  { id: 'grounding', name: 'Grounding & Bonding', shortName: 'Grounding', description: 'Earthing systems, bonding, and protective conductors.', accent: '#2f855a', icon: 'ground' },
-  { id: 'motors', name: 'Motors & Drives', shortName: 'Motors', description: 'Motor circuits, protection, controls, and drives.', accent: '#2563a8', icon: 'motor' },
-  { id: 'transformers', name: 'Transformers', shortName: 'Transformers', description: 'Protection, conductors, grounding, and installation.', accent: '#7c3aed', icon: 'transformer' },
-  { id: 'generators', name: 'Generators & Standby', shortName: 'Generators', description: 'Generator systems, transfer equipment, and emergency power.', accent: '#b7791f', icon: 'generator' },
-  { id: 'distribution', name: 'Panels & Distribution', shortName: 'Distribution', description: 'Panels, switchgear, bus systems, and clearances.', accent: '#475569', icon: 'panel' },
-  { id: 'industrial', name: 'Industrial Systems', shortName: 'Industrial', description: 'Controls, PLCs, VFDs, isolation, and safety circuits.', accent: '#be185d', icon: 'factory' },
+  { id: 'conductors', name: 'Conductors & Cables', shortName: 'Conductors', description: 'Ampacity, sizing, correction, adjustment, and voltage drop.', accent: '#0b7285', icon: 'cable' },
+  { id: 'protection', name: 'Protection', shortName: 'Protection', description: 'Overload, short-circuit, ground-fault, and equipment protection.', accent: '#c2410c', icon: 'shield' },
+  { id: 'grounding', name: 'Grounding & Bonding', shortName: 'Grounding', description: 'Grounded systems, bonding, electrodes, and fault-current paths.', accent: '#2f855a', icon: 'ground' },
+  { id: 'motors', name: 'Motors', shortName: 'Motors', description: 'Motor current basis, conductors, protection, control, and disconnecting means.', accent: '#2563a8', icon: 'motor' },
+  { id: 'transformers', name: 'Transformers', shortName: 'Transformers', description: 'Transformer conductors, protection, grounding, and installation.', accent: '#7c3aed', icon: 'transformer' },
+  { id: 'generators', name: 'Generators', shortName: 'Generators', description: 'Generator conductors, protection, transfer equipment, and grounding.', accent: '#b7791f', icon: 'generator' },
+  { id: 'services', name: 'Services', shortName: 'Services', description: 'Service conductors, equipment, disconnecting, and protection.', accent: '#9f1239', icon: 'panel' },
+  { id: 'distribution', name: 'Panels & Distribution', shortName: 'Distribution', description: 'Panelboards, switchgear, equipment spaces, and distribution assemblies.', accent: '#475569', icon: 'panel' },
+  { id: 'industrial', name: 'Industrial Installations', shortName: 'Industrial', description: 'Industrial equipment, controls, drives, and coordinated installation checks.', accent: '#be185d', icon: 'factory' },
+  { id: 'special', name: 'Special Systems', shortName: 'Special systems', description: 'Special occupancies, emergency systems, and focused PEC applications.', accent: '#0369a1', icon: 'shield' },
 ];
 
 export const standards: Standard[] = [
-  { id: 'iec', name: 'IEC', fullName: 'International Electrotechnical Commission', edition: 'Current supported editions', description: 'International standards for electrical installations, equipment, and safety.' },
-  { id: 'nec', name: 'NEC', fullName: 'NFPA 70 — National Electrical Code', edition: '2023', description: 'United States benchmark for safe electrical design and installation.' },
-  { id: 'pec', name: 'PEC', fullName: 'Philippine Electrical Code', edition: '2017', description: 'Electrical installation requirements used in the Philippines.' },
+  { id: 'pec', name: 'PEC', fullName: 'Philippine Electrical Code', edition: PEC_EDITION, description: 'Building, plant, facility, and equipment installation requirements.', status: 'active' },
+  { id: 'pdc', name: 'PDC', fullName: 'Philippine Distribution Code', edition: 'Planned', description: 'Distribution-system and distribution-interface requirements. Technical content is intentionally not populated yet.', status: 'planned' },
+  { id: 'pgc', name: 'PGC', fullName: 'Philippine Grid Code', edition: 'Planned', description: 'Transmission, grid, and grid-interface requirements. Technical content is intentionally not populated yet.', status: 'planned' },
 ];
 
-const topicNames: Record<string, string[]> = {
-  conductors: ['Conductor Ampacity', 'Cable Sizing Principles', 'Ambient-Temperature Correction', 'Cable Grouping and Derating', 'Parallel Conductors', 'Neutral Conductor Sizing', 'Protective Conductor Sizing', 'Voltage-Drop Guidance', 'Copper vs Aluminum Conductors'],
-  protection: ['Circuit Breakers', 'Fuses', 'Overload Protection', 'Short-Circuit Protection', 'Ground-Fault Protection', 'Interrupting Capacity', 'Protective-Device Coordination'],
-  grounding: ['Grounding Terminology', 'Equipment Grounding Conductors', 'Protective Earth Conductors', 'Grounding Electrode Systems', 'Bonding', 'Neutral-to-Ground Connections', 'Separately Derived Systems', 'Generator Grounding', 'IEC TN, TT, and IT Earthing Arrangements'],
-  motors: ['Motor Full-Load Current', 'Motor Branch-Circuit Conductors', 'Motor Overload Protection', 'Motor Short-Circuit Protection', 'Motor Disconnecting Means', 'Motor Controllers', 'Multiple-Motor Feeders', 'VFD-Fed Motors', 'Soft-Starter Installations', 'Motor Control Centers'],
-  transformers: ['Transformer Rated Current', 'Transformer Primary Protection', 'Transformer Secondary Protection', 'Transformer Conductors', 'Transformer Grounding', 'Dry-Type Transformer Installation'],
-  generators: ['Generator Conductor Sizing', 'Generator Overcurrent Protection', 'Generator Neutral Grounding', 'Transfer Switches', 'Separately Derived Generator Systems', 'Emergency Systems', 'Standby Systems'],
-  distribution: ['Panelboards', 'Switchboards', 'Switchgear', 'Motor Control Centers in Distribution', 'Busbar and Bus Ratings', 'Working Clearances', 'Equipment SCCR and Interrupting Ratings'],
-  industrial: ['Industrial Control Panels', 'PLC and Control Panels', 'Control Transformers', 'Control Wiring', '24 VDC Control Systems', 'VFD Installation', 'Isolation and Disconnects', 'Emergency-Stop Electrical Considerations'],
+const checklist = (complete: boolean): ContentCompleteness[] => [
+  'Detailed PEC explanation', 'Applicability', 'PEC references', 'Key requirements', 'Formula',
+  'Variable definitions', 'Engineering table', 'Engineering figure', 'Worked example #1',
+  'Worked example #2', 'Design workflow', 'Decision guide', 'Exceptions', 'Common mistakes',
+  'Related topics', 'Source traceability',
+].map((item) => ({ item, status: complete ? 'complete' : 'incomplete' }));
+
+const motorBranchConductors: Topic = {
+  id: 'motor-branch-circuit-conductors', title: 'Motor Branch-Circuit Conductors', categoryId: 'motors',
+  description: 'A source-traced PEC workflow for selecting conductors without confusing operating current, conductor ampacity, overload protection, or fault protection.',
+  synonyms: ['motor cable', 'motor wire size', 'motor feeder cable', 'motor branch conductor', 'motor breaker cable', '430.22', '4.30.2.2', 'motor ampacity'],
+  standards: { pec: {
+    standardId: 'pec', standardName: 'Philippine Electrical Code Part 1', edition: PEC_EDITION,
+    reference: 'PEC Part 1, Article 4.30, §§4.30.1.6 and 4.30.2.1-.2; §3.10.1.15',
+    references: ['Article 4.30 (supplied PDF p. 368)', '§4.30.1.6 (supplied PDF pp. 369-370)', '§§4.30.2.1-.2 (supplied PDF pp. 375-376)', '§3.10.1.15 (supplied PDF pp. 173-174)', '§1.10.1.14(c), cross-referenced for termination temperature limits'],
+    referenceDetails: { article: '4.30', section: '4.30.1.6; 4.30.2.1; 4.30.2.2; 3.10.1.15', table: '4.30.14.1-.4 and 3.10.1.15-.21 as applicable' },
+    quickAnswer: 'For a single continuous-duty motor, first determine the PEC full-load current basis required by §4.30.1.6(a)(1), then provide conductor ampacity of at least 125% of that current under §4.30.2.2(a). That is only the starting ampacity. The conductor must still pass ambient-temperature, conductor-grouping, installation-method, insulation, termination-temperature, and voltage-drop checks. Overload and short-circuit/ground-fault protection are separate design functions.',
+    summary: `The PEC treats a motor branch circuit as a coordinated system rather than a single cable-and-breaker lookup. Article 4.30 covers the motor, branch-circuit and feeder conductors, overload protection, controller, short-circuit and ground-fault protection, disconnecting means, and motor-control equipment. Section 4.30.2.1 explains the purpose of its conductor rules: to identify ampacities capable of carrying motor current without overheating under the stated conditions. This page addresses circuits not over 600 V; higher-voltage motor circuits require the separate provisions identified by the Code.
+
+For the usual general motor application, §4.30.1.6(a)(1) directs the designer to use the applicable motor full-load current table when determining conductor ampacity, switch ratings, and branch-circuit short-circuit and ground-fault protection. Motor nameplate current is not automatically substituted for that table value. The same section identifies cases that depart from the normal table basis, including low-speed or high-torque motors, multispeed motors, and listed motor-operated equipment covered by stated exceptions. Section 4.30.1.6(a)(2) separately states that motor overload protection is based on motor nameplate current. Estimated operating current, PEC table current, nameplate current, conductor ampacity, overload setting, and breaker or fuse rating are related, but they are not the same quantity.
+
+For one motor used continuously, §4.30.2.2(a) requires conductor ampacity not less than 125% of the motor full-load current determined under §4.30.1.6(a)(1). This is a minimum required ampacity relationship, not a conductor-size answer. The engineer must next select the applicable conductor ampacity method under §4.30.1.6 and §3.10.1.15. Section 3.10.1.15 permits the listed ampacity tables or a calculation under engineering supervision, directs use of the lowest applicable ampacity where more than one value applies, and points to terminal temperature limitations. A conductor that appears adequate in a favorable table column may fail after actual conditions of use are considered.
+
+Adjustment and correction are part of that second-stage check. Section 3.10.1.15(b)(2)(a) addresses more than three current-carrying conductors in a raceway or cable and certain bundled or stacked installations. Its table supplies adjustment factors and its exceptions define cases requiring separate treatment. Ambient temperature, installation method, conductor insulation, terminal ratings, neutral-current treatment, equipment instructions, and special wiring-method rules can also change usable ampacity. This toolkit does not reproduce the full official ampacity tables. It requires the engineer to record the actual table row, column, factor, and termination limit used.
+
+Voltage drop is an independent check. The fine-print note under §3.10.1.15 states that its ampacities do not account for voltage drop and points to branch-circuit and feeder guidance elsewhere in the PEC. A cable can meet thermal ampacity and still produce unsatisfactory running voltage or starting performance on a long motor circuit. The voltage-drop formula on this page is a general engineering formula, not a PEC-defined conductor-sizing percentage. Starting current, power factor, route length, conductor impedance, and motor torque requirements may control the practical design.
+
+Finally, conductor sizing must remain coordinated with other motor-circuit functions. The overload device responds to sustained overload and overheating; the branch-circuit fuse or breaker clears short circuits and ground faults while permitting starting; the disconnect provides isolation; the controller switches the motor; and grounding and bonding provide the fault-current path. Selecting a breaker first and assuming the conductor is acceptable reverses the workflow. The design record should show the PEC current basis, 125% calculation, ampacity source, corrections and adjustments, terminal limits, voltage-drop results, protective-device checks, exceptions considered, and exact references used.`,
+    applicability: ['A single motor used continuously on a circuit not over 600 V.', 'Field-installed conductors on the supply side of the motor/controller.', 'General motor applications using the §4.30.1.6(a)(1) current basis.'],
+    notApplicable: ['Motor circuits over 600 V.', 'Conductors integral to factory-assembled equipment identified in §4.30.2.1.', 'Motor-compressors or other equipment governed by additional articles.', 'Special duty or motor configurations without their specific §4.30.2.2 rules.'],
+    importantConditions: ['Confirm duty and motor configuration before choosing the current basis.', 'Use the official PEC motor-current and ampacity tables.', 'Apply the lowest applicable ampacity and actual termination limit.'],
+    requirements: ['Identify the applicable §4.30.1.6 current basis.', 'For one continuous-duty motor, calculate at least 125% of applicable PEC FLC under §4.30.2.2(a).', 'Select allowable ampacity under §3.10.1.15.', 'Apply ambient correction, grouping adjustment, and wiring-method rules.', 'Verify terminal limitations and equipment instructions.', 'Check running and starting voltage drop separately.', 'Coordinate overload, fault protection, disconnect, controller, grounding, and bonding.'],
+    formulas: [
+      { name: 'Continuous-duty single-motor minimum ampacity', purpose: 'Represent the verified PEC conductor relationship.', expression: 'I_min = 1.25 x I_PEC-FLC', variables: [{ symbol: 'I_min', definition: 'Minimum required conductor ampacity before condition-of-use checks', unit: 'A' }, { symbol: 'I_PEC-FLC', definition: 'Applicable full-load current under §4.30.1.6(a)(1)', unit: 'A' }], units: 'amperes', basis: 'derived-from-standard', sourceReference: 'PEC §4.30.2.2(a), supplied PDF p. 375.', whenToUse: 'Single, continuous-duty motor when the general current basis applies.', assumptions: ['Continuous duty.', 'No special configuration displaces the base rule.'], relationshipToPec: 'Direct mathematical representation of §4.30.2.2(a).', workedInputExample: 'For verified table current T A, I_min = 1.25T A.' },
+      { name: 'Estimated three-phase motor operating current', purpose: 'Estimate operating current for an engineering reasonableness check.', expression: 'I_est = P_out / (sqrt(3) x V_LL x eta x PF)', variables: [{ symbol: 'I_est', definition: 'Estimated line current', unit: 'A' }, { symbol: 'P_out', definition: 'Motor output power', unit: 'W' }, { symbol: 'V_LL', definition: 'Line-to-line voltage', unit: 'V' }, { symbol: 'eta', definition: 'Efficiency', unit: 'decimal' }, { symbol: 'PF', definition: 'Power factor', unit: 'decimal' }], units: 'W, V, A; eta and PF as decimals', basis: 'general-engineering', sourceReference: 'General three-phase power relationship.', whenToUse: 'Preliminary load and reasonableness checks.', assumptions: ['Balanced three-phase supply.', 'Inputs describe the same operating point.'], relationshipToPec: 'Does not replace the §4.30.1.6 current basis.', workedInputExample: '37 kW, 440 V, eta 0.92, PF 0.86 gives about 59.9 A.' },
+      { name: 'Approximate three-phase voltage drop', purpose: 'Estimate steady-state line-to-line voltage drop.', expression: 'DeltaV = sqrt(3) x I x L x (R cos(phi) + X sin(phi))', variables: [{ symbol: 'DeltaV', definition: 'Line-to-line voltage drop', unit: 'V' }, { symbol: 'I', definition: 'Circuit current', unit: 'A' }, { symbol: 'L', definition: 'One-way length', unit: 'km' }, { symbol: 'R', definition: 'AC resistance', unit: 'ohm/km' }, { symbol: 'X', definition: 'Reactance', unit: 'ohm/km' }, { symbol: 'phi', definition: 'Load phase angle', unit: 'degrees or radians' }], units: 'A, km, ohm/km, V', basis: 'general-engineering', sourceReference: 'General circuit relationship; §3.10.1.15 FPN 1 says ampacity does not include voltage drop.', whenToUse: 'After candidate conductor and route are known.', assumptions: ['Balanced circuit.', 'Impedance is valid for the operating condition.'], relationshipToPec: 'A separate design check, not the §4.30.2.2 ampacity rule.', workedInputExample: 'Use manufacturer impedance and actual route length; do not guess R or X.' },
+    ],
+    tables: [
+      { title: 'Motor branch-circuit design checks', type: 'requirement', columns: ['Design check', 'Requirement / basis', 'Reference'], rows: [['Current basis', 'Use applicable §4.30.1.6 basis.', '§4.30.1.6(a)(1)'], ['Minimum ampacity', 'At least 125% of applicable PEC FLC for the base case.', '§4.30.2.2(a)'], ['Usable ampacity', 'Use lowest applicable value after conditions of use.', '§3.10.1.15'], ['Grouping', 'Use official adjustment rule and exceptions.', '§3.10.1.15(b)(2)(a)'], ['Terminations', 'Check conductor temperature limitations.', '§1.10.1.14(c)'], ['Voltage drop', 'Separate check; ampacity tables do not include it.', '§3.10.1.15 FPN 1']], sourceReference: 'Supplied PEC PDF pp. 173-174 and 369-376.', purpose: 'Tie each decision to its distinct basis.' },
+      { title: 'Protection and component responsibilities', type: 'comparison', columns: ['Component', 'Function', 'Protects against', 'Does not primarily establish'], rows: [['Conductor', 'Carry current without prohibited overheating', 'Thermal effects within selected ampacity', 'Overload setting or fault-device rating'], ['Overload device', 'Protect motor thermally', 'Sustained operational overload', 'High-level branch short circuits'], ['Fuse / breaker', 'Fault protection', 'Short circuits and ground faults', 'Every form of motor overload'], ['Disconnect', 'Isolation', 'Safe separation when properly applied', 'Automatic protection'], ['Grounding / bonding path', 'Fault-current path', 'Shock and fault hazards', 'Normal load-current return']], sourceReference: 'Article 4.30 functional structure; verify each applicable part.', purpose: 'Prevent functions from being treated as interchangeable.' },
+      { title: 'Special-condition decision guide', type: 'decision', columns: ['Condition', 'Action', 'Reason', 'Reference'], rows: [['Continuous-duty single motor', 'Apply base relationship.', 'Gold-page base case.', '§4.30.2.2(a)'], ['Multispeed', 'Use line-side and motor-side rules.', 'Current bases differ.', '§4.30.2.2(b)'], ['Wye-start, delta-run', 'Review configuration-specific conductors.', 'Motor-side rule differs.', '§4.30.2.2(c)'], ['Part-winding', 'Apply configuration-specific rule.', 'Winding conductors differ.', '§4.30.2.2(d)'], ['Other duty', 'Use official duty-cycle table.', 'Duty changes the basis.', '§4.30.2.2(e)']], sourceReference: 'Supplied PEC PDF pp. 375-376.', purpose: 'Route special cases before calculation.' },
+    ],
+    figures: [
+      { title: 'Motor branch-circuit functional path', type: 'schematic', description: 'Original diagram separating switching and protection functions.', nodes: ['Supply', 'Breaker / fuse - fault protection', 'Disconnect - isolation', 'Controller / contactor - switching', 'Overload relay - thermal protection', 'Motor'], paths: [['PEC current basis', 'Minimum ampacity', 'Correction / adjustment', 'Selected conductor'], ['Bonding path', 'Equipment grounding conductor', 'Fault-current return']], annotation: 'Physical order and permitted combinations depend on the equipment and PEC.', sourceBasis: 'Original toolkit diagram based on Article 4.30; not copied from the PEC.' },
+      { title: 'Three currents that must not be conflated', type: 'conceptual', description: 'Distinct current inputs used by different checks.', nodes: ['Estimated operating current', 'PEC table / permitted special-case current', 'Motor nameplate current'], paths: [['PEC current basis', '125% minimum', 'Ampacity tables and factors', 'Final conductor']], annotation: 'Check §4.30.1.6 exceptions before assigning a current to a function.', sourceBasis: 'Original toolkit diagram based on §§4.30.1.6 and 4.30.2.2.' },
+    ],
+    examples: [
+      { title: '37 kW motor - separate estimated current from PEC current basis', problem: 'Develop a traceable sizing workflow without substituting calculated current for the PEC input.', given: ['37 kW output', '440 V, three phase, 60 Hz', 'Efficiency 92%', 'Power factor 0.86'], assumptions: ['Balanced supply', 'Continuous-duty general motor workflow', 'Official PEC tables are available to the responsible engineer'], applicableRule: 'Establish current under §4.30.1.6(a)(1), then apply §4.30.2.2(a).', steps: ['Calculate 37,000 / (sqrt(3) x 440 x 0.92 x 0.86) = approximately 59.9 A.', 'Retrieve and record I_PEC-FLC from the applicable official PEC table; do not substitute 59.9 A.', 'Calculate I_min = 1.25 x I_PEC-FLC.', 'Select the applicable ampacity table and record material, insulation, wiring method, and temperature column.', 'Apply correction, adjustment, and terminal limits.', 'Check running/starting voltage drop and the separate protection, disconnect, and grounding requirements.'], result: 'Estimated current is about 59.9 A. Compliant minimum ampacity is 1.25 times the verified PEC table current. Final conductor size remains open until official table and installation inputs are recorded.', interpretation: 'The example prevents an apparently precise estimate from replacing the Code-prescribed basis.', verification: ['Confirm motor classification and applicable Table 4.30.14.1-.4.', 'Record every ampacity factor.', 'Confirm final usable ampacity is at least I_min.'], variations: ['Special motor types can change the basis.', 'Long routes can make voltage drop govern.'], sourceReferences: ['PEC §§4.30.1.6(a)(1), 4.30.2.2(a), and 3.10.1.15.'] },
+      { title: '55 kW motor - 40 C ambient, grouping, and a long run', problem: 'Show why selecting cable only from operating current is insufficient.', given: ['55 kW output', '440 V, three phase', 'Efficiency 93%', 'Power factor 0.87', '40 C ambient', 'Multiple loaded conductors', 'Long route'], assumptions: ['Continuous-duty workflow', 'Actual grouping count, terminals, insulation, length, and impedance must be confirmed', 'No official factor is guessed'], applicableRule: 'Apply the motor minimum and §3.10.1.15 conditions sequentially; check voltage drop separately.', steps: ['Estimate current as approximately 89.2 A.', 'Retrieve and document I_PEC-FLC.', 'Calculate I_min = 1.25 x I_PEC-FLC.', 'Retrieve official ambient correction for the selected conductor system.', 'Count current-carrying conductors and retrieve the official adjustment after reviewing exceptions.', 'Select a conductor whose final usable ampacity meets I_min and all terminal limits.', 'Check running and starting voltage drop with actual impedance and length.', 'Complete overload and fault-protection selections separately.'], result: 'The estimate is about 89.2 A, but no conductor size is claimed without verified PEC table current, official factors, termination limits, and route data.', interpretation: 'Correction, adjustment, termination limits, or voltage performance can govern after the 125% minimum.', verification: ['Confirm conductor count.', 'Use official factors.', 'Review every applicable exception.'], variations: ['Separating circuits can change adjustment.', 'Starting performance can drive a larger conductor.'], sourceReferences: ['PEC §§4.30.1.6, 4.30.2.2(a), and 3.10.1.15(b)(2)(a).'] },
+    ],
+    workflows: [{ title: 'Motor branch-circuit PEC workflow', steps: ['Identify motor rating, voltage, phase, duty, and configuration', 'Determine the §4.30.1.6 current basis', 'Calculate §4.30.2.2 minimum ampacity', 'Identify conductor system and terminal ratings', 'Apply ambient correction', 'Apply conductor-count adjustment and exceptions', 'Select final usable ampacity', 'Check running and starting voltage drop', 'Determine overload protection', 'Determine short-circuit and ground-fault protection', 'Verify disconnect, controller, grounding, and bonding', 'Record sources, inputs, factors, exceptions, and verification'], note: 'Conductor completion does not complete the motor-circuit design.' }],
+    engineeringNotes: ['Code requirement vs recommendation: 125% is the verified base-case rule; a larger conductor for voltage drop or reserve can be an engineering decision.', 'Field consideration: verify terminal markings, raceway fill, ambient along the route, and manufacturer instructions.'],
+    exceptions: ['§4.30.2.2(a) has a specific rectified-dc-motor exception.', '§4.30.2.2(b)-(e) address special configurations and duty.', '§4.30.1.6(a)(1) has equipment-specific exceptions to the normal table basis.', '§3.10.1.15(b)(2)(a) contains multiple adjustment exceptions.', 'Special equipment articles can add to or amend Article 4.30.'],
+    commonMistakes: ['Using measured or calculated current for every PEC calculation.', 'Using nameplate current without checking §4.30.1.6.', 'Treating overload and fault protection as the same function.', 'Selecting a breaker first and assuming the conductor complies.', 'Ignoring terminal temperature limitations.', 'Ignoring ambient correction or grouping adjustment.', 'Skipping voltage drop and starting performance.', 'Copying a factor without checking its conditions and exceptions.'],
+    verification: { standard: 'Philippine Electrical Code Part 1', edition: PEC_EDITION, references: ['§§4.30.1.6, 4.30.2.1-.2, 3.10.1.15, and cross-referenced §1.10.1.14(c)'], reviewStatus: 'Needs verification', lastReviewed: REVIEW_DATE, sourceStatus: 'Clauses checked in the supplied PDF. Edition identity is not visible and must be confirmed before VERIFIED status.' },
+  } },
+  engineeringExplanation: 'The conductor is one component of a coordinated motor circuit. Thermal ampacity, voltage performance, overload protection, fault protection, disconnecting, control, and grounding answer different questions.',
+  engineeringNotes: ['Keep a calculation record naming the exact table row/column and every factor.'],
+  commonMistakes: ['Collapsing independent motor-circuit checks into one percentage.'],
+  relatedTopicIds: ['motor-full-load-current', 'motor-overload-protection', 'motor-short-circuit-and-ground-fault-protection', 'conductor-ampacity', 'temperature-correction-and-adjustment-factors', 'voltage-drop', 'grounding-and-bonding-fundamentals'],
+  lastReviewed: REVIEW_DATE, reviewStatus: 'Needs verification',
+  sourceStatus: 'Source-traced gold-standard draft - edition identity still NEEDS VERIFICATION.', completeness: checklist(true),
 };
 
-const slug = (value: string) => value.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-const referenceFor = (category: string, standard: StandardId): string => {
-  const refs: Record<string, Record<StandardId, string>> = {
-    conductors: { nec: 'Articles 210, 215 & 310', iec: 'IEC 60364-5-52', pec: 'PEC Part 1, Chapters 2 & 3' },
-    protection: { nec: 'Articles 110 & 240', iec: 'IEC 60364-4-43 / IEC 60947', pec: 'PEC Part 1, Article 2.40' },
-    grounding: { nec: 'Article 250', iec: 'IEC 60364-4-41 / 5-54', pec: 'PEC Part 1, Article 2.50' },
-    motors: { nec: 'Article 430', iec: 'IEC 60364 / IEC 60947-4-1', pec: 'PEC Part 1, Article 4.30' },
-    transformers: { nec: 'Article 450', iec: 'IEC 60076 / IEC 60364', pec: 'PEC Part 1, Article 4.50' },
-    generators: { nec: 'Articles 445, 700 & 702', iec: 'IEC 60364-5-55 / 6', pec: 'PEC Part 1, Articles 4.45 & 7' },
-    distribution: { nec: 'Articles 110, 408 & 409', iec: 'IEC 61439 / IEC 60947', pec: 'PEC Part 1, Articles 1.10 & 4.08' },
-    industrial: { nec: 'Articles 409, 430 & 670', iec: 'IEC 60204-1 / IEC 61439', pec: 'PEC Part 1, Articles 4.09 & 6.70' },
-  };
-  return refs[category][standard];
-};
-
-const buildStandard = (standardId: StandardId, categoryId: string, title: string): TopicStandard => ({
-  standardId,
-  edition: standardId === 'nec' ? '2023' : standardId === 'pec' ? '2017' : 'Current supported edition',
-  reference: referenceFor(categoryId, standardId),
-  summary: `${title} must be selected and applied within the installation rules, equipment ratings, and safety provisions of the ${standardId.toUpperCase()} reference.`,
-  requirements: [
-    'Confirm equipment and conductor ratings for the actual operating conditions.',
-    'Apply the referenced protection, installation, and identification requirements.',
-    'Verify exceptions and local authority requirements before final design approval.',
-  ],
-});
-
-const overrides: Record<string, Partial<Topic>> = {
-  'motor-full-load-current': {
-    description: 'The current value used as the starting point for motor circuit conductor and protection decisions.',
-    synonyms: ['motor amps', 'motor FLC', 'motor current table', 'nameplate current'],
-    engineeringExplanation: 'Code-table current and nameplate current serve different purposes. Branch conductors and short-circuit protection commonly begin with tabulated current, while overload protection is closely tied to the motor nameplate and service factor.',
-    engineeringNotes: ['Record voltage, phase, frequency, duty, and service factor before selecting a basis.', 'A VFD input circuit is evaluated differently from the motor output circuit.'],
-    commonMistakes: ['Using nameplate current for every motor-circuit calculation.', 'Ignoring the distinction between full-load current and full-load amperes.'],
-  },
-  'motor-overload-protection': {
-    description: 'Protection against sustained overcurrent and overheating during motor operation.',
-    synonyms: ['motor heater', 'overload relay', 'motor OL', 'thermal overload'],
-    engineeringExplanation: 'Overload devices protect the motor from thermal damage. They are not intended to interrupt high-level short circuits, so the branch circuit normally also needs a fuse or circuit breaker selected under separate rules.',
-    engineeringNotes: ['Coordinate settings with motor service factor, temperature rise, and starting profile.', 'Electronic overload relays can add phase-loss and imbalance protection.'],
-    commonMistakes: ['Treating the branch breaker as the motor overload device.', 'Setting overloads only to avoid nuisance trips without checking motor thermal limits.'],
-  },
-  'motor-short-circuit-protection': {
-    description: 'Branch-circuit protection for faults and high-magnitude short-circuit current.',
-    synonyms: ['motor breaker', 'motor fuse', 'MCP', 'instantaneous trip'],
-    engineeringExplanation: 'A motor branch protective device must allow normal starting current while clearing faults. This often produces a rating larger than the conductor ampacity would suggest under general circuit rules.',
-    engineeringNotes: ['Check the controller combination rating and available fault current.', 'Document any permitted increase made to allow the motor to start.'],
-    commonMistakes: ['Applying general branch-circuit breaker limits without the motor-specific rules.', 'Confusing fault protection with overload protection.'],
-  },
-  'conductor-ampacity': {
-    description: 'The maximum current a conductor can carry continuously under its stated conditions of use.',
-    synonyms: ['cable ampacity', 'wire current rating', 'conductor rating', 'amp table'],
-    engineeringExplanation: 'Ampacity is not a single property of conductor size. Insulation rating, termination temperature, ambient conditions, installation method, grouping, and harmonic content can all determine the usable value.',
-    engineeringNotes: ['Start with the correct installation-method table before applying correction factors.', 'The lowest-rated termination can govern the usable ampacity.'],
-    commonMistakes: ['Selecting from a table without applying ambient or grouping corrections.', 'Using a 90 °C insulation column for terminals rated 75 °C.'],
-  },
-  'voltage-drop-guidance': {
-    description: 'Design guidance for limiting conductor voltage loss to maintain equipment performance.',
-    synonyms: ['voltage drop', 'cable volt loss', 'maximum voltage drop', 'VD calculation'],
-    engineeringExplanation: 'Voltage drop is primarily a performance design check rather than a substitute for ampacity. Circuit length, load current, power factor, conductor impedance, and starting conditions should be considered.',
-    engineeringNotes: ['Evaluate motor starting drop separately from steady-state drop.', 'Use actual route length and include return path as appropriate to the system.'],
-    commonMistakes: ['Treating recommended percentage values as universal mandatory limits.', 'Calculating with nominal load when starting or inrush is the governing case.'],
-  },
-  'equipment-grounding-conductors': {
-    description: 'The conductive fault-current path connecting non-current-carrying metal parts to the system ground.',
-    synonyms: ['earth conductor', 'EGC', 'ground wire', 'equipment earth'],
-    engineeringExplanation: 'The equipment grounding conductor provides a low-impedance fault path so the protective device operates promptly. It is not intended to carry normal load current.',
-    engineeringNotes: ['Maintain continuity across raceway joints and removable equipment.', 'Increasing phase conductors for voltage drop may require a proportional EGC increase.'],
-    commonMistakes: ['Using the earth as the effective fault-current return path.', 'Mixing equipment grounding and neutral functions downstream of the permitted bonding point.'],
-  },
-  'generator-neutral-grounding': {
-    description: 'Selection and arrangement of neutral grounding and bonding for generator-supplied systems.',
-    synonyms: ['generator neutral', 'genset grounding', 'four pole ATS', 'generator bond'],
-    engineeringExplanation: 'Whether a generator is separately derived depends strongly on transfer-switch neutral switching. That classification determines the location of the neutral-to-ground bond and grounding-electrode connection.',
-    engineeringNotes: ['Review the transfer scheme before deciding where to bond the neutral.', 'Ground-fault sensing must be coordinated with the chosen bonding arrangement.'],
-    commonMistakes: ['Creating parallel neutral paths through duplicate bonds.', 'Assuming every generator is automatically a separately derived system.'],
-  },
-  'transformer-primary-protection': {
-    description: 'Overcurrent protection on the supply side of a transformer.',
-    synonyms: ['transformer breaker', 'primary fuse', 'transformer OCPD'],
-    engineeringExplanation: 'Primary protection is selected from transformer current, permitted protection arrangements, conductor protection, and inrush behavior. Secondary conductor and device requirements remain a separate check.',
-    engineeringNotes: ['Transformer energization can produce substantial inrush.', 'Evaluate both transformer protection and feeder conductor protection.'],
-    commonMistakes: ['Assuming primary protection always protects secondary conductors.', 'Selecting a device without checking inrush tolerance.'],
-  },
-  'working-clearances': {
-    description: 'Minimum clear working space around electrical equipment likely to require examination or service while energized.',
-    synonyms: ['panel clearance', 'electrical room clearance', 'working space', 'switchboard clearance'],
-    engineeringExplanation: 'Required depth, width, height, access, and illumination depend on voltage and the conditions around exposed live parts. The space must remain dedicated and unobstructed.',
-    engineeringNotes: ['Coordinate clearances early with architectural and mechanical layouts.', 'Doors and removable panels may affect the practical service envelope.'],
-    commonMistakes: ['Using working space for storage.', 'Measuring only from the wall rather than the equipment enclosure.'],
-  },
-};
-
-const allIds = Object.values(topicNames).flat().map(slug);
-
-export const topics: Topic[] = Object.entries(topicNames).flatMap(([categoryId, names], categoryIndex) =>
-  names.map((title, index) => {
-    const id = slug(title);
-    const related = [
-      ...names.filter((name) => slug(name) !== id).slice(Math.max(0, index - 1), Math.max(0, index - 1) + 2).map(slug),
-      allIds[(categoryIndex * 7 + index + 11) % allIds.length],
-    ].filter((value, i, array) => value !== id && array.indexOf(value) === i).slice(0, 3);
-    const base: Topic = {
-      id,
-      title,
-      categoryId,
-      description: `Practical guidance for applying ${title.toLowerCase()} requirements in electrical installations.`,
-      synonyms: title.toLowerCase().split(/[\s/&-]+/).filter((word) => word.length > 3),
-      standards: {
-        iec: buildStandard('iec', categoryId, title),
-        nec: buildStandard('nec', categoryId, title),
-        pec: buildStandard('pec', categoryId, title),
-      },
-      engineeringExplanation: `${title} should be evaluated as part of the complete electrical system. Load characteristics, environmental conditions, equipment listings, protection, and the authority having jurisdiction can affect the final application.`,
-      engineeringNotes: ['Document the design basis and the edition used.', 'Confirm manufacturer instructions and local amendments.'],
-      commonMistakes: ['Applying a general rule without checking its exceptions.', 'Failing to coordinate the requirement with connected equipment.'],
-      relatedTopicIds: related,
-      lastReviewed: index % 3 === 0 ? '2026-08-14' : index % 3 === 1 ? '2026-07-22' : '2026-06-05',
-      reviewStatus: 'Draft',
-      sourceStatus: 'Locator draft — substantive content not yet migrated',
-    };
-    const topic = { ...base, ...(overrides[id] ?? {}) };
-    if (enrichedTopicIds.includes(id)) {
-      topic.standards = Object.fromEntries(
-        Object.entries(topic.standards).map(([standardId, content]) => [standardId, enrichStandard(id, standardId as StandardId, content!)]),
-      );
-      topic.reviewStatus = 'Needs source';
-      topic.lastReviewed = '2026-09-26';
-      topic.sourceStatus = 'Enriched draft — detailed requirements require official-source verification';
-    }
-    return topic;
-  }),
-);
+export const topics: Topic[] = [
+  motorBranchConductors,
+  motorFullLoadCurrent,
+  motorOverloadProtection,
+  motorFaultProtection,
+  conductorAmpacity,
+  temperatureCorrection,
+  voltageDrop,
+  groundingFundamentals,
+  generatorNeutralGrounding,
+  transformerProtection,
+  workingClearances,
+  servicesEquipment,
+  motorDisconnectingMeans,
+  motorControllersAndControlCircuits,
+  transformerGroundingAndBonding,
+];
